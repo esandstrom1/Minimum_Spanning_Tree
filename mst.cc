@@ -37,6 +37,7 @@ void read_file(vector<Edge>& list, int& length, string filename);
 void print_tree(vector<Edge> list);
 void print_edge(Edge node);
 vector<Edge> prims(vector<Edge> list);
+vector<Edge> kruskals(vector<Edge> list);
 bool full_tree(unordered_map<int, bool> mst);
 Edge get_lowest_edge(vector<Edge> list, unordered_map<int, bool> mst_map);
 void print_map(unordered_map<int, bool> map);
@@ -45,26 +46,31 @@ bool is_valid_addition(Edge new_edge, unordered_map<int, bool> mst_map);
 int main()
 {
     int length = 0;
-    string filename = "graphs/graph_v1600_e6400.txt";
-    vector<Edge> list;
-    read_file(list, length, filename);
+    string filename = "graphs/graph_v400_e1200.txt";
+    //string filename = "small.txt";
+    vector<Edge> prims_list;
+    read_file(prims_list, length, filename);
+    vector<Edge> kruskals_list = prims_list;
 
     // print_tree(list);
     // cout << endl;
     //exit(1);
 
+    /*
     chrono::time_point<chrono::system_clock> start;
 	start = chrono::system_clock::now(); // Start the system clock.
-
-    vector<Edge> mst = prims(list);
-
+    vector<Edge> prims_mst = prims(prims_list);
 	chrono::time_point<chrono::system_clock> end;
 	end = chrono::system_clock::now();
 	chrono::duration<double> total_time = end - start;
-
-    cout << "THE FINAL MST IS" << endl;
-    print_tree(mst);
+    cout << "Prim's FINAL MST IS" << endl;
+    print_tree(prims_mst);
 	cerr << "Base computation took " << total_time.count() << " seconds " << endl;
+    */
+
+   vector<Edge> kruskals_mst = kruskals(kruskals_list);
+   print_tree(kruskals_mst);
+
 
     return 0;
 }
@@ -83,9 +89,18 @@ void read_file(vector<Edge>& list, int& length, string filename)
         cout << "Couldn't open file " << filename << endl;
         exit(1);
     }
-    getline(Instream, currentline);
+    if(!getline(Instream, currentline))
+    {
+        cout << "Empty file" << endl;
+        exit(0);
+    }
     NUM_NODES = stoi(currentline);
-    cout << "Num nodes " << NUM_NODES << endl;
+    if(NUM_NODES == 0)
+    {
+        cout << "Empty graph" << endl;
+        exit(0);
+    }
+    //cout << "Num nodes " << NUM_NODES << endl;
     Edge node;
 
     while(getline(Instream, currentline))
@@ -123,6 +138,11 @@ void print_edge(Edge node)
 vector<Edge> prims(vector<Edge> list)
 {
     vector<Edge> mst;
+    if(NUM_NODES == 1)
+    {
+        mst.push_back(list[0]);
+        return mst;
+    }
 
     //Create a map to keep track of which nodes have been added to the MST
     //<Node number, added or not>
@@ -153,8 +173,12 @@ vector<Edge> prims(vector<Edge> list)
         lowest = get_lowest_edge(list, added_map);
         if(lowest.node1 == 0 || lowest.node2 == 0)
             cout << "ABOUT TO ADD A 0 HERE!!! (node returned from get_lowest)" << endl;
-        added_map[lowest.node1] = true;
-        added_map[lowest.node2] = true;
+        
+        //If node1 was already in the MST, add node2. Else add node2
+        if(added_map[lowest.node1] == true)
+            added_map[lowest.node2] = true;
+        else
+            added_map[lowest.node1] = true;
         mst.push_back(lowest);
         edges_added++;
         //for(size_t e = 0; e < list.size(); e++)
@@ -170,6 +194,10 @@ vector<Edge> prims(vector<Edge> list)
     // cout << endl << "MAP:" << endl;
     // print_map(added_map);
     return mst;
+}
+vector<Edge> kruskals(vector<Edge> list)
+{
+    
 }
 bool full_tree(unordered_map<int, bool> mst_map)
 {
@@ -217,6 +245,6 @@ bool is_valid_addition(Edge new_edge, unordered_map<int, bool> mst_map)
     if((mst_map[new_edge.node1] == true) ^ (mst_map[new_edge.node2] == true))
         return true;
 
-    //If BOTH ends are in the map, it will create a cycle. If neither are in the map... (shoudln't be possible)
+    //If BOTH ends are in the map, it will create a cycle. If neither are in the map... (shouldn't be possible)
     return false;
 }
