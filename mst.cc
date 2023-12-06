@@ -49,6 +49,7 @@ int main()
 
     print_tree(list);
     cout << endl;
+    //exit(1);
 
     vector<Edge> mst = prims(list);
     cout << "THE FINAL MST IS" << endl;
@@ -72,29 +73,26 @@ void read_file(vector<Edge>& list, int& length, string filename)
         exit(1);
     }
     getline(Instream, currentline);
-    
-    length = stoi(currentline);
+
     Edge node;
-    for(int x = 0; x < length; x++)
-        list.push_back(node);
 
-    int a = 0;
-    while(a < length && !Instream.eof())
+    while(getline(Instream, currentline))
     {
-        getline(Instream, currentline);
         index = currentline.find(',');
-        n1 = stoi(currentline.substr(0, index+1));
+        //printf("_%s_\n", (currentline.substr(0, index)).c_str());
+        n1 = stoi(currentline.substr(0, index));
         currentline = currentline.substr(index+1);
-        list[a].node1 = n1;
+        node.node1 = n1;
 
         index = currentline.find(',');
-        n2 = stoi(currentline.substr(0, index+1));
+        n2 = stoi(currentline.substr(0, index));
+        //printf("_%s_\n", (currentline.substr(0, index)).c_str());
         currentline = currentline.substr(index+1);
-        list[a].node2 = n2;
+        node.node2 = n2;
 
-        list[a].weight = stoi(currentline);
-        //print_edge(list[a]);
-        a++;
+        //printf("_%s_\n", currentline.c_str());
+        node.weight = stoi(currentline);
+        list.push_back(node);
     }
 }
 void print_tree(vector<Edge> list)
@@ -130,12 +128,12 @@ vector<Edge> prims(vector<Edge> list)
     Edge lowest;
     while(full_tree(added_map) == false)
     {
-        cout << endl << "MAP:" << endl;
-        print_map(added_map);
+        // cout << endl << "MAP:" << endl;
+        // print_map(added_map);
         // cout << "MST:" << endl;
         // print_tree(mst);
-        cout << "List:" << endl;
-        print_tree(list);
+        // cout << "List:" << endl;
+        // print_tree(list);
 
         //Get lowest edge
         lowest = get_lowest_edge(list, added_map);
