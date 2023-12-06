@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <climits>
+#include <chrono>
 
 using namespace std;
 
@@ -43,17 +44,26 @@ bool is_valid_addition(Edge new_edge, unordered_map<int, bool> mst_map);
 int main()
 {
     int length = 0;
-    string filename = "graphs/graph_v100_e150.txt";
+    string filename = "graphs/graph_v1600_e6400.txt";
     vector<Edge> list;
     read_file(list, length, filename);
 
-    print_tree(list);
-    cout << endl;
+    // print_tree(list);
+    // cout << endl;
     //exit(1);
 
+    chrono::time_point<chrono::system_clock> start;
+	start = chrono::system_clock::now(); // Start the system clock.
+
     vector<Edge> mst = prims(list);
+
+	chrono::time_point<chrono::system_clock> end;
+	end = chrono::system_clock::now();
+	chrono::duration<double> total_time = end - start;
+
     cout << "THE FINAL MST IS" << endl;
     print_tree(mst);
+	cerr << "Base computation took " << total_time.count() << " seconds " << endl;
 
     return 0;
 }
@@ -148,6 +158,7 @@ vector<Edge> prims(vector<Edge> list)
             if(list[e] == lowest)
             {
                 list.erase(list.begin() + e);
+                break;
             }
         }
     }
