@@ -8,6 +8,7 @@
 #include <chrono>
 
 using namespace std;
+int NUM_NODES = 0;
 
 struct Edge
 {
@@ -83,7 +84,8 @@ void read_file(vector<Edge>& list, int& length, string filename)
         exit(1);
     }
     getline(Instream, currentline);
-
+    NUM_NODES = stoi(currentline);
+    cout << "Num nodes " << NUM_NODES << endl;
     Edge node;
 
     while(getline(Instream, currentline))
@@ -125,18 +127,20 @@ vector<Edge> prims(vector<Edge> list)
     //Create a map to keep track of which nodes have been added to the MST
     //<Node number, added or not>
     unordered_map<int, bool> added_map;
-    for(size_t c = 0; c < list.size(); c++)
-    {
-        added_map[list[c].node1] = false;
-        added_map[list[c].node2] = false;
-    }
+    // for(size_t c = 0; c < list.size(); c++)
+    // {
+    //     added_map[list[c].node1] = false;
+    //     added_map[list[c].node2] = false;
+    // }
 
     //Step one: Pick a node to start with. Node 1
     added_map[list[0].node1] = true;  //Add it to the map of added nodes
 
     //While not every node is added to the tree, keep going.
     Edge lowest;
-    while(full_tree(added_map) == false)
+    int edges_added = 0;
+    //while(full_tree(added_map) == false)
+    while(edges_added < (NUM_NODES-1))
     {
         // cout << endl << "MAP:" << endl;
         // print_map(added_map);
@@ -152,6 +156,7 @@ vector<Edge> prims(vector<Edge> list)
         added_map[lowest.node1] = true;
         added_map[lowest.node2] = true;
         mst.push_back(lowest);
+        edges_added++;
         //for(size_t e = 0; e < list.size(); e++)
         for(int e = list.size()-1; e >= 0; e--)
         {
