@@ -4,8 +4,9 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
-#include <climits>
-#include <chrono>
+#include <climits>         //INT_MAX
+#include <chrono>          //Timing
+#include <algorithm>       //Only for sorting vector in kruskals()
 
 using namespace std;
 int NUM_NODES = 0;
@@ -39,14 +40,17 @@ void print_edge(Edge node);
 vector<Edge> prims(vector<Edge> list);
 vector<Edge> kruskals(vector<Edge> list);
 bool full_tree(unordered_map<int, bool> mst);
-Edge get_lowest_edge(vector<Edge> list, unordered_map<int, bool> mst_map);
+Edge get_lowest_edge(vector<Edge> list, unordered_map<int, bool>& mst_map);
 void print_map(unordered_map<int, bool> map);
-bool is_valid_addition(Edge new_edge, unordered_map<int, bool> mst_map);
+bool is_valid_addition(Edge new_edge, unordered_map<int, bool>& mst_map);   //Prim's
+bool is_valid_addition_k(Edge new_edge, unordered_map<int, int> mst_map); //Kruskal's
+bool compare_weights(Edge left, Edge right);
+int get_root(int key, unordered_map<int, int>& mst_map);
 
 int main()
 {
     int length = 0;
-    string filename = "graphs/graph_v400_e1200.txt";
+    string filename = "graphs/graph_v1600_e6400.txt";
     //string filename = "small.txt";
     vector<Edge> prims_list;
     read_file(prims_list, length, filename);
@@ -56,7 +60,7 @@ int main()
     // cout << endl;
     //exit(1);
 
-    /*
+    
     chrono::time_point<chrono::system_clock> start;
 	start = chrono::system_clock::now(); // Start the system clock.
     vector<Edge> prims_mst = prims(prims_list);
@@ -66,10 +70,10 @@ int main()
     cout << "Prim's FINAL MST IS" << endl;
     print_tree(prims_mst);
 	cerr << "Base computation took " << total_time.count() << " seconds " << endl;
-    */
+    
 
-   vector<Edge> kruskals_mst = kruskals(kruskals_list);
-   print_tree(kruskals_mst);
+//    vector<Edge> kruskals_mst = kruskals(kruskals_list);
+//    print_tree(kruskals_mst);
 
 
     return 0;
@@ -197,7 +201,49 @@ vector<Edge> prims(vector<Edge> list)
 }
 vector<Edge> kruskals(vector<Edge> list)
 {
-    
+    vector<Edge> mst;
+    unordered_map<int, int> added_map;
+    Edge lowest;
+
+    sort(list.begin(), list.end(), compare_weights);
+
+    added_map[list[0].node1] = true;
+    //added_map[list[0].node2] = true;
+
+    int edges_added = 0;
+    while(edges_added < NUM_NODES-1)
+    {
+        //Find first valid edge to add, which will be the lowest
+        for(size_t f = 0; f < list.size(); f++)
+        {
+            //ERROR. Kruskal's works by connecting nodes that are disjoint but may already have connections of their own
+            //Can't simply rely on 
+            if(is_valid_addition_k(list[f], added_map))      //*
+            {
+                lowest = list[f];
+                break;
+            }
+        }
+        //Update hash values according to Kruskal's
+        added_map[lowest.node1] = true;                      //*
+        added_map[lowest.node2] = true;                      //*
+
+        //Add new edge to mst
+        mst.push_back(lowest);
+        edges_added++;
+        
+        //Delete that edge from list
+        for(size_t g = 0; g < list.size(); g++)
+        {
+            if(list[g] == lowest)
+            {
+                list.erase(list.begin() + g);
+                break;
+            }
+        }
+    }
+
+    return mst;
 }
 bool full_tree(unordered_map<int, bool> mst_map)
 {
@@ -207,7 +253,7 @@ bool full_tree(unordered_map<int, bool> mst_map)
 
     return true;
 }
-Edge get_lowest_edge(vector<Edge> list, unordered_map<int, bool> mst_map)
+Edge get_lowest_edge(vector<Edge> list, unordered_map<int, bool>& mst_map)
 {
     int lowest_weight = INT_MAX;
     int index_of_lowest = -1;
@@ -239,7 +285,7 @@ void print_map(unordered_map<int, bool> map)
         cout << "[" << element.first << ", " << element.second << "]" << endl;
     }
 }
-bool is_valid_addition(Edge new_edge, unordered_map<int, bool> mst_map)
+bool is_valid_addition(Edge new_edge, unordered_map<int, bool>& mst_map)
 {
     //If one end OR the other is in the map, it can be added
     if((mst_map[new_edge.node1] == true) ^ (mst_map[new_edge.node2] == true))
@@ -247,4 +293,27 @@ bool is_valid_addition(Edge new_edge, unordered_map<int, bool> mst_map)
 
     //If BOTH ends are in the map, it will create a cycle. If neither are in the map... (shouldn't be possible)
     return false;
+}
+bool compare_weights(Edge left, Edge right)
+{
+    return left.weight < right.weight;
+}
+bool is_valid_addition_k(Edge new_edge, unordered_map<int, int> mst_map)
+{
+    //If node1 has the same root as node2, connecting them will make a cycle
+    if(get_root(new_edge.node1, mst_map) == get_root(new_edge.node2, mst_map));
+        return false;
+    return true;
+}
+int get_root(int key, unordered_map<int, int>& mst_map)
+{
+    if(mst_map[key] == -1)
+    {
+        //root case
+        return key;
+    }
+    else
+    {
+        return get_root(mst_map[key], mst_map);
+    }
 }
