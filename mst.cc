@@ -10,6 +10,7 @@
 
 using namespace std;
 int NUM_NODES = 0;
+int COMPRESS = 0;
 
 struct Edge
 {
@@ -36,7 +37,7 @@ struct Edge
 
 void read_file(vector<Edge>& list, int& length, string filename);
 void print_tree(vector<Edge> list);
-void print_edge(Edge node);
+int print_edge(Edge node);
 vector<Edge> prims(vector<Edge> list);
 vector<Edge> kruskals(vector<Edge> list);
 bool full_tree(unordered_map<int, bool> mst);
@@ -46,6 +47,7 @@ bool is_valid_addition(Edge new_edge, unordered_map<int, bool>& mst_map);   //Pr
 bool is_valid_addition_k(Edge new_edge, unordered_map<int, int>& mst_map); //Kruskal's
 bool compare_weights(Edge left, Edge right);
 int get_root(int key, unordered_map<int, int>& mst_map);
+int get_root_pc(int key, unordered_map<int, int>& mst_map);   //Path compression version
 void merge(Edge new_edge, unordered_map<int, int>& mst_map);
 
 int main(int argc, char* argv[])
@@ -60,6 +62,7 @@ int main(int argc, char* argv[])
     vector<Edge> prims_list;
     read_file(prims_list, length, filename);
     vector<Edge> kruskals_list = prims_list;
+    vector<Edge> kruskals_list_pc = prims_list; //Kruskal's with path compression
 
     // print_tree(list);
     // cout << endl;
@@ -74,9 +77,9 @@ int main(int argc, char* argv[])
 	chrono::time_point<chrono::system_clock> end;
 	end = chrono::system_clock::now();
 	chrono::duration<double> total_time = end - start;
-    cout << "Prim's FINAL MST IS" << endl;
+    cout << "Prim's MST is" << endl;
     print_tree(prims_mst);
-    cout << endl << endl;
+    cout << endl << endl << endl;
 	cerr << "Prim's computation took " << total_time.count() << " seconds " << endl;
     
 
@@ -86,9 +89,19 @@ int main(int argc, char* argv[])
 
 	end = chrono::system_clock::now();
 	total_time = end - start;
-    cout << "Kruskal's FINAL MST IS" << endl;
+    cout << "Kruskal's MST is" << endl;
     print_tree(kruskals_mst);
     cerr << "Kruskal's computation took " << total_time.count() << " seconds " << endl;
+
+
+    COMPRESS = 1;
+    start = chrono::system_clock::now(); // Start the system clock.
+    vector<Edge> kruskals_mst_pc = kruskals(kruskals_list_pc);
+
+    end = chrono::system_clock::now();
+	total_time = end - start;
+    cerr << "Kruskal's computation with path compression took " << total_time.count() << " seconds " << endl;
+
 
 
     return 0;
@@ -143,16 +156,19 @@ void read_file(vector<Edge>& list, int& length, string filename)
 }
 void print_tree(vector<Edge> list)
 {
+    int sum = 0;
     size_t length = list.size();
     cout << length << endl;
     for(size_t b = 0; b < length; b++)
     {
-        print_edge(list[b]);
+        sum += print_edge(list[b]);
     }
+    cout << "MST length: " << sum << endl;
 }
-void print_edge(Edge node)
+int print_edge(Edge node)
 {
     printf("%d,%d,%d\n", node.node1, node.node2, node.weight);
+    return node.weight;
 }
 vector<Edge> prims(vector<Edge> list)
 {
@@ -319,9 +335,19 @@ bool is_valid_addition_k(Edge new_edge, unordered_map<int, int>& mst_map)
     if(mst_map.find(new_edge.node2) == mst_map.end())
         mst_map[new_edge.node2] = -1;
 
-    //If node1 has the same root as node2, connecting them will make a cycle
-    if(get_root(new_edge.node1, mst_map) == get_root(new_edge.node2, mst_map))
-        return false;
+
+    if(COMPRESS == 1)
+    {
+        //If node1 has the same root as node2, connecting them will make a cycle
+        if(get_root_pc(new_edge.node1, mst_map) == get_root_pc(new_edge.node2, mst_map))
+            return false;
+    }
+    else
+    {
+        //If node1 has the same root as node2, connecting them will make a cycle
+        if(get_root(new_edge.node1, mst_map) == get_root(new_edge.node2, mst_map))
+            return false;
+    }
     return true;
 }
 int get_root(int key, unordered_map<int, int>& mst_map)
@@ -338,8 +364,17 @@ int get_root(int key, unordered_map<int, int>& mst_map)
 }
 void merge(Edge new_edge, unordered_map<int, int>& mst_map)
 {
-    int left_root = get_root(new_edge.node1, mst_map);
-    int right_root = get_root(new_edge.node2, mst_map);
+    int left_root, right_root;
+    if(COMPRESS == 1)
+    {
+        left_root = get_root_pc(new_edge.node1, mst_map);
+        right_root = get_root_pc(new_edge.node2, mst_map);
+    }
+    else
+    {
+        left_root = get_root(new_edge.node1, mst_map);
+        right_root = get_root(new_edge.node2, mst_map);
+    }
     if(left_root < right_root)
     {
         mst_map[right_root] = left_root;
@@ -347,5 +382,18 @@ void merge(Edge new_edge, unordered_map<int, int>& mst_map)
     else
     {
         mst_map[left_root] = right_root;
+    }
+}
+int get_root_pc(int key, unordered_map<int, int>& mst_map)   //Path compression version
+{
+    if(mst_map[key] == -1)
+    {
+        //root case
+        return key;
+    }
+    else
+    {
+        mst_map[key] = get_root_pc(mst_map[key], mst_map);
+        return mst_map[key];
     }
 }
