@@ -43,15 +43,19 @@ bool full_tree(unordered_map<int, bool> mst);
 Edge get_lowest_edge(vector<Edge> list, unordered_map<int, bool>& mst_map);
 void print_map(unordered_map<int, bool> map);
 bool is_valid_addition(Edge new_edge, unordered_map<int, bool>& mst_map);   //Prim's
-bool is_valid_addition_k(Edge new_edge, unordered_map<int, int> mst_map); //Kruskal's
+bool is_valid_addition_k(Edge new_edge, unordered_map<int, int>& mst_map); //Kruskal's
 bool compare_weights(Edge left, Edge right);
 int get_root(int key, unordered_map<int, int>& mst_map);
 void merge(Edge new_edge, unordered_map<int, int>& mst_map);
 
-int main()
+int main(int argc, char* argv[])
 {
     int length = 0;
     string filename = "graphs/graph_v1600_e6400.txt";
+    if(argc == 2)
+    {
+        filename = string(argv[1]);
+    }
     //string filename = "test_input_2.txt";
     vector<Edge> prims_list;
     read_file(prims_list, length, filename);
@@ -62,19 +66,29 @@ int main()
     //exit(1);
 
     
-    // chrono::time_point<chrono::system_clock> start;
-	// start = chrono::system_clock::now(); // Start the system clock.
-    // vector<Edge> prims_mst = prims(prims_list);
-	// chrono::time_point<chrono::system_clock> end;
-	// end = chrono::system_clock::now();
-	// chrono::duration<double> total_time = end - start;
-    // cout << "Prim's FINAL MST IS" << endl;
-    // print_tree(prims_mst);
-	// cerr << "Base computation took " << total_time.count() << " seconds " << endl;
+    chrono::time_point<chrono::system_clock> start;
+	start = chrono::system_clock::now(); // Start the system clock.
+
+    vector<Edge> prims_mst = prims(prims_list);                           //RUN Prims()
+
+	chrono::time_point<chrono::system_clock> end;
+	end = chrono::system_clock::now();
+	chrono::duration<double> total_time = end - start;
+    cout << "Prim's FINAL MST IS" << endl;
+    print_tree(prims_mst);
+    cout << endl << endl;
+	cerr << "Prim's computation took " << total_time.count() << " seconds " << endl;
     
 
-   vector<Edge> kruskals_mst = kruskals(kruskals_list);
-   print_tree(kruskals_mst);
+    start = chrono::system_clock::now(); // Start the system clock.
+
+    vector<Edge> kruskals_mst = kruskals(kruskals_list);
+
+	end = chrono::system_clock::now();
+	total_time = end - start;
+    cout << "Kruskal's FINAL MST IS" << endl;
+    print_tree(kruskals_mst);
+    cerr << "Kruskal's computation took " << total_time.count() << " seconds " << endl;
 
 
     return 0;
@@ -204,10 +218,6 @@ vector<Edge> kruskals(vector<Edge> list)
 {
     vector<Edge> mst;
     unordered_map<int, int> set_map;
-    for(int h = 1; h <= NUM_NODES; h++)
-    {
-        set_map[h] = -1;
-    }
 
     Edge lowest;
 
@@ -301,8 +311,14 @@ bool compare_weights(Edge left, Edge right)
 {
     return left.weight < right.weight;
 }
-bool is_valid_addition_k(Edge new_edge, unordered_map<int, int> mst_map)
+bool is_valid_addition_k(Edge new_edge, unordered_map<int, int>& mst_map)
 {
+    //Initialize the map
+    if(mst_map.find(new_edge.node1) == mst_map.end())
+        mst_map[new_edge.node1] = -1;
+    if(mst_map.find(new_edge.node2) == mst_map.end())
+        mst_map[new_edge.node2] = -1;
+
     //If node1 has the same root as node2, connecting them will make a cycle
     if(get_root(new_edge.node1, mst_map) == get_root(new_edge.node2, mst_map))
         return false;
