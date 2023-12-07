@@ -9,4 +9,4 @@ run: mst
 	./mst graphs/graph_v800_e3200.txt > v800_output.txt
 	./mst graphs/graph_v1600_e6400.txt > v1600_output.txt
 clean:
-	rm mst
+	rm mst *_output.txt

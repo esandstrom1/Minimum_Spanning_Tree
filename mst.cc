@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
 
     end = chrono::system_clock::now();
 	total_time = end - start;
-    cerr << "Kruskal's computation with path compression took " << total_time.count() << " seconds " << endl;
+    cerr << "Kruskal's computation with path compression took " << total_time.count() << " seconds " << endl << endl;
 
 
 
