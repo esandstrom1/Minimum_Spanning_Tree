@@ -46,12 +46,13 @@ bool is_valid_addition(Edge new_edge, unordered_map<int, bool>& mst_map);   //Pr
 bool is_valid_addition_k(Edge new_edge, unordered_map<int, int> mst_map); //Kruskal's
 bool compare_weights(Edge left, Edge right);
 int get_root(int key, unordered_map<int, int>& mst_map);
+void merge(Edge new_edge, unordered_map<int, int>& mst_map);
 
 int main()
 {
     int length = 0;
     string filename = "graphs/graph_v1600_e6400.txt";
-    //string filename = "small.txt";
+    //string filename = "test_input_2.txt";
     vector<Edge> prims_list;
     read_file(prims_list, length, filename);
     vector<Edge> kruskals_list = prims_list;
@@ -61,19 +62,19 @@ int main()
     //exit(1);
 
     
-    chrono::time_point<chrono::system_clock> start;
-	start = chrono::system_clock::now(); // Start the system clock.
-    vector<Edge> prims_mst = prims(prims_list);
-	chrono::time_point<chrono::system_clock> end;
-	end = chrono::system_clock::now();
-	chrono::duration<double> total_time = end - start;
-    cout << "Prim's FINAL MST IS" << endl;
-    print_tree(prims_mst);
-	cerr << "Base computation took " << total_time.count() << " seconds " << endl;
+    // chrono::time_point<chrono::system_clock> start;
+	// start = chrono::system_clock::now(); // Start the system clock.
+    // vector<Edge> prims_mst = prims(prims_list);
+	// chrono::time_point<chrono::system_clock> end;
+	// end = chrono::system_clock::now();
+	// chrono::duration<double> total_time = end - start;
+    // cout << "Prim's FINAL MST IS" << endl;
+    // print_tree(prims_mst);
+	// cerr << "Base computation took " << total_time.count() << " seconds " << endl;
     
 
-//    vector<Edge> kruskals_mst = kruskals(kruskals_list);
-//    print_tree(kruskals_mst);
+   vector<Edge> kruskals_mst = kruskals(kruskals_list);
+   print_tree(kruskals_mst);
 
 
     return 0;
@@ -202,13 +203,16 @@ vector<Edge> prims(vector<Edge> list)
 vector<Edge> kruskals(vector<Edge> list)
 {
     vector<Edge> mst;
-    unordered_map<int, int> added_map;
+    unordered_map<int, int> set_map;
+    for(int h = 1; h <= NUM_NODES; h++)
+    {
+        set_map[h] = -1;
+    }
+
     Edge lowest;
 
     sort(list.begin(), list.end(), compare_weights);
 
-    added_map[list[0].node1] = true;
-    //added_map[list[0].node2] = true;
 
     int edges_added = 0;
     while(edges_added < NUM_NODES-1)
@@ -218,15 +222,14 @@ vector<Edge> kruskals(vector<Edge> list)
         {
             //ERROR. Kruskal's works by connecting nodes that are disjoint but may already have connections of their own
             //Can't simply rely on 
-            if(is_valid_addition_k(list[f], added_map))      //*
+            if(is_valid_addition_k(list[f], set_map))      //*
             {
                 lowest = list[f];
                 break;
             }
         }
         //Update hash values according to Kruskal's
-        added_map[lowest.node1] = true;                      //*
-        added_map[lowest.node2] = true;                      //*
+        merge(lowest, set_map);
 
         //Add new edge to mst
         mst.push_back(lowest);
@@ -301,7 +304,7 @@ bool compare_weights(Edge left, Edge right)
 bool is_valid_addition_k(Edge new_edge, unordered_map<int, int> mst_map)
 {
     //If node1 has the same root as node2, connecting them will make a cycle
-    if(get_root(new_edge.node1, mst_map) == get_root(new_edge.node2, mst_map));
+    if(get_root(new_edge.node1, mst_map) == get_root(new_edge.node2, mst_map))
         return false;
     return true;
 }
@@ -315,5 +318,18 @@ int get_root(int key, unordered_map<int, int>& mst_map)
     else
     {
         return get_root(mst_map[key], mst_map);
+    }
+}
+void merge(Edge new_edge, unordered_map<int, int>& mst_map)
+{
+    int left_root = get_root(new_edge.node1, mst_map);
+    int right_root = get_root(new_edge.node2, mst_map);
+    if(left_root < right_root)
+    {
+        mst_map[right_root] = left_root;
+    }
+    else
+    {
+        mst_map[left_root] = right_root;
     }
 }
