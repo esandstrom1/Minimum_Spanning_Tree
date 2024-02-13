@@ -58,17 +58,12 @@ int main(int argc, char* argv[])
     {
         filename = string(argv[1]);
     }
-    //string filename = "test_input_2.txt";
+
     vector<Edge> prims_list;
     read_file(prims_list, length, filename);
     vector<Edge> kruskals_list = prims_list;
     vector<Edge> kruskals_list_pc = prims_list; //Kruskal's with path compression
 
-    // print_tree(list);
-    // cout << endl;
-    //exit(1);
-
-    
     chrono::time_point<chrono::system_clock> start;
 	start = chrono::system_clock::now(); // Start the system clock.
 
@@ -103,7 +98,6 @@ int main(int argc, char* argv[])
     cerr << "Kruskal's computation with path compression took " << total_time.count() << " seconds " << endl << endl;
 
 
-
     return 0;
 }
 
@@ -132,24 +126,21 @@ void read_file(vector<Edge>& list, int& length, string filename)
         cout << "Empty graph" << endl;
         exit(0);
     }
-    //cout << "Num nodes " << NUM_NODES << endl;
     Edge node;
 
+    //Parsing an individual edge
     while(getline(Instream, currentline))
     {
         index = currentline.find(',');
-        //printf("_%s_\n", (currentline.substr(0, index)).c_str());
         n1 = stoi(currentline.substr(0, index));
         currentline = currentline.substr(index+1);
         node.node1 = n1;
 
         index = currentline.find(',');
         n2 = stoi(currentline.substr(0, index));
-        //printf("_%s_\n", (currentline.substr(0, index)).c_str());
         currentline = currentline.substr(index+1);
         node.node2 = n2;
 
-        //printf("_%s_\n", currentline.c_str());
         node.weight = stoi(currentline);
         list.push_back(node);
     }
@@ -182,11 +173,7 @@ vector<Edge> prims(vector<Edge> list)
     //Create a map to keep track of which nodes have been added to the MST
     //<Node number, added or not>
     unordered_map<int, bool> added_map;
-    // for(size_t c = 0; c < list.size(); c++)
-    // {
-    //     added_map[list[c].node1] = false;
-    //     added_map[list[c].node2] = false;
-    // }
+
 
     //Step one: Pick a node to start with. Node 1
     added_map[list[0].node1] = true;  //Add it to the map of added nodes
@@ -194,20 +181,16 @@ vector<Edge> prims(vector<Edge> list)
     //While not every node is added to the tree, keep going.
     Edge lowest;
     int edges_added = 0;
-    //while(full_tree(added_map) == false)
+
     while(edges_added < (NUM_NODES-1))
     {
-        // cout << endl << "MAP:" << endl;
-        // print_map(added_map);
-        // cout << "MST:" << endl;
-        // print_tree(mst);
-        // cout << "List:" << endl;
-        // print_tree(list);
-
         //Get lowest edge
         lowest = get_lowest_edge(list, added_map);
-        if(lowest.node1 == 0 || lowest.node2 == 0)
-            cout << "ABOUT TO ADD A 0 HERE!!! (node returned from get_lowest)" << endl;
+        if((lowest.node1 == 0) || (lowest.node2 == 0))
+        {
+            cout << "ABOUT TO ADD UNCONNECTED EDGE! (node returned from get_lowest)" << endl;
+            exit(1);
+        }
         
         //If node1 was already in the MST, add node2. Else add node2
         if(added_map[lowest.node1] == true)
@@ -216,7 +199,7 @@ vector<Edge> prims(vector<Edge> list)
             added_map[lowest.node1] = true;
         mst.push_back(lowest);
         edges_added++;
-        //for(size_t e = 0; e < list.size(); e++)
+
         for(int e = list.size()-1; e >= 0; e--)
         {
             if(list[e] == lowest)
@@ -226,8 +209,7 @@ vector<Edge> prims(vector<Edge> list)
             }
         }
     }
-    // cout << endl << "MAP:" << endl;
-    // print_map(added_map);
+
     return mst;
 }
 vector<Edge> kruskals(vector<Edge> list)
@@ -237,8 +219,8 @@ vector<Edge> kruskals(vector<Edge> list)
 
     Edge lowest;
 
+    //Sort by edge weight
     sort(list.begin(), list.end(), compare_weights);
-
 
     int edges_added = 0;
     while(edges_added < NUM_NODES-1)
@@ -246,11 +228,11 @@ vector<Edge> kruskals(vector<Edge> list)
         //Find first valid edge to add, which will be the lowest
         for(size_t f = 0; f < list.size(); f++)
         {
-            //ERROR. Kruskal's works by connecting nodes that are disjoint but may already have connections of their own
-            //Can't simply rely on 
-            if(is_valid_addition_k(list[f], set_map))      //*
+            //Determine validity of edge per constraints of Kruskal's
+            if(is_valid_addition_k(list[f], set_map))
             {
                 lowest = list[f];
+                list.erase(list.begin()+f);
                 break;
             }
         }
@@ -260,16 +242,6 @@ vector<Edge> kruskals(vector<Edge> list)
         //Add new edge to mst
         mst.push_back(lowest);
         edges_added++;
-        
-        //Delete that edge from list
-        for(size_t g = 0; g < list.size(); g++)
-        {
-            if(list[g] == lowest)
-            {
-                list.erase(list.begin() + g);
-                break;
-            }
-        }
     }
 
     return mst;
